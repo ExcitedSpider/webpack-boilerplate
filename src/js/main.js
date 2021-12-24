@@ -1,53 +1,104 @@
+import vertexShaderSrc from '@/shader/vertex-basic.glsl'
+import fragmentShaderSrc from '@/shader/fragment-basic.glsl'
+
 export const main = () => {
   const canvas = document.querySelector('#canvas-webgl2')
 
-  const glCtx = canvas.getContext('webgl2')
-  if (!glCtx) {
+  const gl = canvas.getContext('webgl2')
+  if (!gl) {
     return
   }
 
-  console.log(glCtx)
-}
+  resizeCanvasToDisplaySize(gl.canvas)
 
-const vertexShaderSource = `#version 300 es
- 
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
-in vec4 a_position;
- 
-// all shaders have a main function
-void main() {
- 
-  // gl_Position is a special variable a vertex shader
-  // is responsible for setting
-  gl_Position = a_position;
-}
-`
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSrc)
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSrc)
 
-const fragmentShaderSource = `#version 300 es
- 
-// fragment shaders don't have a default precision so we need
-// to pick one. highp is a good default. It means "high precision"
-precision highp float;
- 
-// we need to declare an output for the fragment shader
-out vec4 outColor;
- 
-void main() {
-  // Just set the output to a constant reddish-purple
-  outColor = vec4(1, 0, 0.5, 1);
+  const program = createProgram(gl, vertexShader, fragmentShader)
+
+  const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
+
+  const positionBuffer = gl.createBuffer()
+
+  /** send buffer data to gpu  */
+
+  // 1. bind buffer to gpu
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+
+  const positions = [0, 0, 0, 0.5, 0.7, 0]
+
+  // 2. set data of buffer bound in step 1
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
+
+  /** specify how to pull data out of buffer */
+
+  const vao = gl.createVertexArray()
+
+  gl.bindVertexArray(vao)
+  gl.enableVertexAttribArray(positionAttributeLocation)
+
+  let size = 2 // 2 components per iteration
+  let type = gl.FLOAT // the data is 32bit floats
+  let normalize = false // don't normalize the data
+  let stride = 0 // 0 = move forward size * sizeof(type) each iteration to get the next position
+  let offset = 0 // start at the beginning of the buffer
+
+  // write data to vao
+  gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset)
+
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
+  gl.clearColor(0, 0, 0, 0)
+  gl.clear(gl.COLOR_BUFFER_BIT)
+  gl.useProgram(program)
+
+  gl.bindVertexArray(vao)
+
+
+  gl.drawArrays(gl.TRIANGLES, 0, 3)
 }
-`
 
 function createShader(gl, type, source) {
-  var shader = gl.createShader(type)
+  const shader = gl.createShader(type)
   gl.shaderSource(shader, source)
   gl.compileShader(shader)
-  var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
+  const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
   if (success) {
     return shader
   }
 
   console.log(gl.getShaderInfoLog(shader))
   gl.deleteShader(shader)
+}
+
+function createProgram(gl, vertexShader, fragmentShader) {
+  const program = gl.createProgram()
+  gl.attachShader(program, vertexShader)
+  gl.attachShader(program, fragmentShader)
+  gl.linkProgram(program)
+  const success = gl.getProgramParameter(program, gl.LINK_STATUS)
+  if (success) {
+    return program
+  }
+
+  console.log(gl.getProgramInfoLog(program))
+  gl.deleteProgram(program)
+}
+
+function resizeCanvasToDisplaySize(canvas) {
+  // Lookup the size the browser is displaying the canvas in CSS pixels.
+  const dpr = window.devicePixelRatio;
+  const displayWidth  = Math.round(canvas.clientWidth * dpr);
+  const displayHeight = Math.round(canvas.clientHeight * dpr);
+ 
+  // Check if the canvas is not the same size.
+  const needResize = canvas.width  != displayWidth || 
+                     canvas.height != displayHeight;
+ 
+  if (needResize) {
+    // Make the canvas the same size
+    canvas.width  = displayWidth;
+    canvas.height = displayHeight;
+  }
+ 
+  return needResize;
 }
