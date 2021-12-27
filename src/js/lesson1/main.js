@@ -1,5 +1,5 @@
-import vertexShaderSrc from '@/shader/vertex-basic.glsl'
-import fragmentShaderSrc from '@/shader/fragment-basic.glsl'
+import vertexShaderSrc from './vertex-basic.glsl'
+import fragmentShaderSrc from './fragment-basic.glsl'
 
 export const main = () => {
   const canvas = document.querySelector('#canvas-webgl2')
@@ -25,7 +25,14 @@ export const main = () => {
   // 1. bind buffer to gpu
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
 
-  const positions = [0, 0, 0, 0.5, 0.7, 0]
+  const positions = [
+    10, 20,
+    80, 20,
+    10, 30,
+    10, 30,
+    80, 20,
+    80, 30,
+  ]
 
   // 2. set data of buffer bound in step 1
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
@@ -48,13 +55,19 @@ export const main = () => {
 
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
   gl.clearColor(0, 0, 0, 0)
-  gl.clear(gl.COLOR_BUFFER_BIT)
-  gl.useProgram(program)
-
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
   gl.bindVertexArray(vao)
 
+  gl.useProgram(program)
+  
+  // set uniforms
+  const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+  gl.uniform2f(resolutionUniformLocation, 100, 100);
 
-  gl.drawArrays(gl.TRIANGLES, 0, 3)
+  const colorUniformLocation = gl.getUniformLocation(program, "u_color");
+  gl.uniform4f(colorUniformLocation, Math.random(), Math.random(), Math.random(), 1);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 6)
 }
 
 function createShader(gl, type, source) {
