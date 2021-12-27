@@ -45,29 +45,29 @@ function bufferColors(gl, program) {
   
    // Set the colors.
    // Pick 2 random colors.
-  const r1 = Math.random();
-  const b1 = Math.random();
-  const g1 = Math.random();
+  const r1 = Math.random() * 256;
+  const b1 = Math.random() * 256;
+  const g1 = Math.random() * 256;
  
-  const r2 = Math.random();
-  const b2 = Math.random();
-  const g2 = Math.random();
+  const r2 = Math.random() * 256;
+  const b2 = Math.random() * 256;
+  const g2 = Math.random() * 256;
  
   gl.bufferData(
       gl.ARRAY_BUFFER,
-      new Float32Array(
-        [ r1, b1, g1, 1,
-          r1, b1, g1, 1,
-          r1, b1, g1, 1,
-          r2, b2, g2, 1,
-          r2, b2, g2, 1,
-          r2, b2, g2, 1]),
+      new Uint8Array(
+        [ r1, b1, g1, 255,
+          r1, b1, g1, 255,
+          r1, b1, g1, 255,
+          r2, b2, g2, 255,
+          r2, b2, g2, 255,
+          r2, b2, g2, 255]),
       gl.STATIC_DRAW);
 
   gl.enableVertexAttribArray(colorLocation);
   const size = 4;
-  const type = gl.FLOAT;
-  const normalize = false;
+  const type = gl.UNSIGNED_BYTE;
+  const normalize = true;
   const stride = 0;
   const offset = 0;
   gl.vertexAttribPointer(colorLocation, size, type, normalize, stride, offset);
@@ -75,41 +75,38 @@ function bufferColors(gl, program) {
 
 
 function bufferPositions(gl, program) {
-  const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
-
   const positionBuffer = gl.createBuffer()
 
-  /** send buffer data to gpu  */
-  // 1. bind buffer to gpu
+  // Tell gpu which buffer is the data transfer target 
   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-
-  const positions = [
+  
+  // Transfer data to gpu buffer
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
     10, 20,
     80, 20,
     10, 30,
     10, 30,
     80, 20,
     80, 30,
-  ]
+  ]), gl.STATIC_DRAW)
 
-  // 2. set data of buffer bound in step 1
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
-
-  /** specify how to pull data out of buffer */
+  // Tell gpu which variable is used in shader program to bind the buffer
+  const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
+  
   const vao = gl.createVertexArray()
-
   gl.bindVertexArray(vao)
-  gl.enableVertexAttribArray(positionAttributeLocation)
 
   let size = 2 // 2 components per iteration
   let type = gl.FLOAT // the data is 32bit floats
   let normalize = false // don't normalize the data
   let stride = 0 // 0 = move forward size * sizeof(type) each iteration to get the next position
   let offset = 0 // start at the beginning of the buffer
-
-
-  // write data to vao
+  
+  // Transfer data to vao
   gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset)
+
+  // Enable VAO
+  gl.enableVertexAttribArray(positionAttributeLocation)
 }
 
 
