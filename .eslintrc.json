@@ -29,5 +29,9 @@
         "config": "config/webpack.common.js"
       }
     }
-  }
+  },
+  "globals": {
+    "webglLessonsUI": "readonly",
+    "webglUtils": "readonly"
+}
 }
